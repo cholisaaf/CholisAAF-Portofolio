@@ -1048,45 +1048,6 @@ rounded-full font-medium">
         if (e.target === commentModal) closeComments();
         if (e.target === postModal) closePosts();
     });
-    // Fungsi untuk memantau perubahan secara Live
-function listenRealtime() {
-    // Pantau Komentar Baru
-    _supabase
-        .channel('schema-db-changes')
-        .on(
-            'postgres_changes',
-            {
-                event: 'INSERT', // Dengerin pas ada data masuk doang
-                schema: 'public',
-                table: 'comments'
-            },
-            (payload) => {
-                const activePostId = document.getElementById('activePostId').value;
-                // Cek apakah komentar baru ini buat postingan yang lagi dibuka
-                if (payload.new.post_id == activePostId) {
-                    console.log("Ada chat masuk!");
-                    openComments(activePostId); // Langsung refresh isi chat
-                }
-            }
-        )
-        .subscribe();
-
-    // Pantau Postingan Baru (Opsional)
-    _supabase
-        .channel('posts-changes')
-        .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'posts' },
-            () => {
-                console.log("Ada postingan baru!");
-                openPosts(); // Refresh daftar feed
-            }
-        )
-        .subscribe();
-}
-
-// Jalankan fungsi dengerin pas halaman pertama kali dibuka
-listenRealtime();
 </script>
 
 </body>
