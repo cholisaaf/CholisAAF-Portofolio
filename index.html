@@ -743,17 +743,13 @@ rounded-full font-medium">
         // --- BAGIAN BARU: Fungsi untuk ambil data dari Database ---
         async function fetchPlaylist() {
             const { data, error } = await _supabase
-                .from('playlist') // Pastikan nama tabel di dashboard adalah 'playlist'
+                .from('playlist')
                 .select('*')
-                .order('id', { ascending: true });
+                .order('priority', { ascending: true }); // GANTI 'id' JADI 'priority'
 
-            if (error) {
-                console.error('Error fetching playlist:', error);
-            } else {
+            if (data && data.length > 0) {
                 playlist = data;
-                if (playlist.length > 0) {
-                    loadSong(currentSongIndex); // Muat lagu pertama setelah data beres diambil
-                }
+                loadSong(currentSongIndex);
             }
         }
 
