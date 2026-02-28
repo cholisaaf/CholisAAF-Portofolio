@@ -1,0 +1,211 @@
+@font-face {
+    font-family: 'Glitch';
+    src: url("fonts/Nowharehouse.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'mc';
+    src: url("fonts/Minecraft.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+#navbar a {
+    color: black;
+    transition: color 0.3s ease;
+}
+
+
+#navbar.nav-dark a {
+    color: white;
+}
+
+
+.nav-link {
+    color: black;
+}
+
+.nav-dark .nav-link {
+    color: white;
+}
+
+
+.homeTx {
+    font-family: 'Glitch', sans-serif;
+}
+
+.mc {
+    font-family: 'mc', sans-serif;
+}
+
+#navbar {
+    transition: color 0.3s ease;
+}
+
+@keyframes flickerCombo {
+
+    0%,
+    18%,
+    22%,
+    25%,
+    53%,
+    57%,
+    100% {
+        opacity: 1;
+        color: white;
+        text-shadow:
+            0 0 5px black,
+            0 0 10px gray,
+            0 0 20px white,
+            0 0 40px white;
+    }
+
+    20%,
+    24%,
+    55% {
+        opacity: 0.2;
+        color: black;
+        text-shadow: none;
+    }
+}
+
+
+.flicker {
+    animation: flickerCombo 1s infinite;
+}
+
+@keyframes flickerCombos {
+
+    0%,
+    18%,
+    22%,
+    25%,
+    53%,
+    57%,
+    100% {
+        opacity: 1;
+        color: white;
+        text-shadow:
+            0 0 5px black,
+            0 0 10px gray,
+        ;
+    }
+
+    20%,
+    24%,
+    55% {
+        opacity: 0.2;
+        color: black;
+        text-shadow: none;
+    }
+}
+
+
+.flickers {
+    animation: flickerCombos 1s infinite;
+}
+
+@keyframes flickerComboss {
+
+    0%,
+    18%,
+    22%,
+    25%,
+    53%,
+    57%,
+    100% {
+        opacity: 1;
+        color: black;
+        text-shadow:
+            0 0 5px black,
+            0 0 10px gray,
+        ;
+    }
+
+    20%,
+    24%,
+    55% {
+        opacity: 0.2;
+        color: black;
+        text-shadow: none;
+    }
+}
+
+
+.flickerss {
+    animation: flickerComboss 1s infinite;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+
+* {
+    -webkit-tap-highlight-color: transparent; 
+    -webkit-touch-callout: none;               
+    user-select: none;                          
+}
+
+
+img {
+    pointer-events: none;       
+    -webkit-user-drag: none;   
+    user-drag: none;
+}
+
+
+a, button, .cursor-pointer, [onclick] {
+    pointer-events: auto;     
+}
+
+.rainbow-text {
+    background: linear-gradient(90deg,
+            red,
+            orange,
+            yellow,
+            green,
+            cyan,
+            blue,
+            violet,
+            red);
+
+    background-size: 200% auto;
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    animation: rainbowMove 3s linear infinite;
+}
+
+@keyframes rainbowMove {
+    0% {
+        background-position: 0% center;
+    }
+
+    100% {
+        background-position: -200% center;
+    }
+}
+
+@layer utilities {
+    .animate-infinite-scroll {
+        animation: infinite-scroll 25s linear infinite;
+    }
+
+    @keyframes infinite-scroll {
+        from {
+            transform: translateX(0);
+        }
+
+        to {
+            transform: translateX(-50%);
+        }
+    }
+}
