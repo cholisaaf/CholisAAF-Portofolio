@@ -12,6 +12,7 @@
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style type="text/tailwindcss">
         @layer utilities {
@@ -75,12 +76,16 @@
             <div class="flex items-center space-x-3 bg-white/10 px-4 py-2 rounded-full border border-white/20 ml-auto mr-4 group hover:bg-white/20 transition-all duration-300"
                 data-aos="fade-down" data-aos-duration="1200">
                 <div class="flex flex-col items-start hidden sm:block">
-                    <span class="text-[10px] nav-link transition-colors mc duration-300 uppercase tracking-widest font-bold">Now Playing</span>
-                    <marquee id="songTitle" class="text-xs nav-link transition-colors mc duration-300 w-24 leading-tight font-medium">Loading...
+                    <span
+                        class="text-[10px] nav-link transition-colors mc duration-300 uppercase tracking-widest font-bold">Now
+                        Playing</span>
+                    <marquee id="songTitle"
+                        class="text-xs nav-link transition-colors mc duration-300 w-24 leading-tight font-medium">
+                        Loading...
                     </marquee>
                 </div>
 
-                <audio id="bgMusic"></audio>
+                <audio id="bgMusic" preload="auto"></audio>
 
                 <div class="flex items-center space-x-2">
                     <button onclick="toggleMusic()" id="musicBtn"
@@ -727,25 +732,41 @@ rounded-full font-medium">
         const songTitle = document.getElementById('songTitle');
         const playIcon = document.getElementById('playIcon');
 
+        // --- BAGIAN BARU: Koneksi Supabase ---
+        const supabaseUrl = 'https://vnzcwijqlkdsjokvmpgv.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuemN3aWpxbGtkc2pva3ZtcGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTE0MzEsImV4cCI6MjA4NzgyNzQzMX0.LS7XzMXOknHl6zhobn5oyMiG5bHqu2zucSKF0n_NGEE'
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey)
 
-        const playlist = [
-            { title: "Piano Man - Billy Joel", src: "music/pianoman.mp3" },
-            { title: "John Denver - Take Me Home, Country Roads", src: "music/takemehome.mp3" },
-            { title: "(1992年) Noriyuki MakiharaMo Koinante Shinai", src: "music/koinante.mp3" },
-        ];
-
+        let playlist = []; // Sekarang kita mulai dengan array kosong
         let currentSongIndex = 0;
 
+        // --- BAGIAN BARU: Fungsi untuk ambil data dari Database ---
+        async function fetchPlaylist() {
+            const { data, error } = await _supabase
+                .from('playlist') // Pastikan nama tabel di dashboard adalah 'playlist'
+                .select('*')
+                .order('id', { ascending: true });
 
-        function loadSong(index) {
-            audio.src = playlist[index].src;
-            songTitle.innerText = playlist[index].title;
-            audio.volume = 0.4;
+            if (error) {
+                console.error('Error fetching playlist:', error);
+            } else {
+                playlist = data;
+                if (playlist.length > 0) {
+                    loadSong(currentSongIndex); // Muat lagu pertama setelah data beres diambil
+                }
+            }
         }
 
+        // Jalankan fungsi fetch saat halaman dibuka
+        fetchPlaylist();
 
-        loadSong(currentSongIndex);
-
+        // --- Fungsi sisanya hampir sama, hanya sesuaikan variabelnya ---
+        function loadSong(index) {
+            if (!playlist[index]) return; // Jaga-jaga kalau playlist kosong
+            audio.src = playlist[index].src; // Ambil kolom 'src' dari DB
+            songTitle.innerText = playlist[index].title; // Ambil kolom 'title' dari DB
+            audio.volume = 0.4;
+        }
 
         function toggleMusic() {
             if (audio.paused) {
@@ -758,8 +779,8 @@ rounded-full font-medium">
         }
 
         function nextSong() {
+            if (playlist.length === 0) return;
             currentSongIndex++;
-
 
             if (currentSongIndex >= playlist.length) {
                 currentSongIndex = 0;
@@ -771,7 +792,6 @@ rounded-full font-medium">
         }
 
         audio.addEventListener('ended', nextSong);
-
 
         function updateIcon(isPlaying) {
             if (isPlaying) {
