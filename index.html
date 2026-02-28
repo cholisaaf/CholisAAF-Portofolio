@@ -576,7 +576,7 @@ rounded-full font-medium">
 
             <div class="flex justify-between items-center mb-12 sticky top-0 z-10 py-4 bg-transparent">
                 <div>
-                    <h2 class="text-4xl font-black text-white italic tracking-tighter uppercase">Feed / Stories</h2>
+                    <h2 class="text-4xl font-black text-white italic tracking-tighter uppercase">Posts</h2>
                     <div class="h-1 w-12 bg-indigo-500 mt-2 rounded-full"></div>
                 </div>
                 <button onclick="closePosts()"
@@ -600,7 +600,7 @@ rounded-full font-medium">
             class="bg-zinc-900 w-full max-w-lg rounded-[2.5rem] border border-white/10 flex flex-col overflow-hidden shadow-2xl h-[600px]">
 
             <div class="p-6 border-b border-white/10 bg-white/5 flex justify-between items-center">
-                <h3 class="text-sm font-black text-white uppercase tracking-[0.3em] italic">Discussions</h3>
+                <h3 class="text-sm font-black text-white uppercase tracking-[0.3em] italic">Comments</h3>
                 <button onclick="closeComments()" class="text-zinc-400 hover:text-white">✕</button>
             </div>
 
@@ -1048,6 +1048,45 @@ rounded-full font-medium">
         if (e.target === commentModal) closeComments();
         if (e.target === postModal) closePosts();
     });
+    // Fungsi untuk memantau perubahan secara Live
+function listenRealtime() {
+    // Pantau Komentar Baru
+    _supabase
+        .channel('schema-db-changes')
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT', // Dengerin pas ada data masuk doang
+                schema: 'public',
+                table: 'comments'
+            },
+            (payload) => {
+                const activePostId = document.getElementById('activePostId').value;
+                // Cek apakah komentar baru ini buat postingan yang lagi dibuka
+                if (payload.new.post_id == activePostId) {
+                    console.log("Ada chat masuk!");
+                    openComments(activePostId); // Langsung refresh isi chat
+                }
+            }
+        )
+        .subscribe();
+
+    // Pantau Postingan Baru (Opsional)
+    _supabase
+        .channel('posts-changes')
+        .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'posts' },
+            () => {
+                console.log("Ada postingan baru!");
+                openPosts(); // Refresh daftar feed
+            }
+        )
+        .subscribe();
+}
+
+// Jalankan fungsi dengerin pas halaman pertama kali dibuka
+listenRealtime();
 </script>
 
 </body>
