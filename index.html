@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
 
     <style type="text/tailwindcss">
         @layer utilities {
@@ -134,6 +135,9 @@
                     </li>
                     <li data-aos="flip-up" data-aos-duration="1800">
                         <a href="#contact" class="nav-link transition-colors mc duration-300">Contact</a>
+                    </li>
+                    <li data-aos="flip-up" data-aos-duration="1800">
+                        <button onclick="openPosts()" class="nav-link transition-colors mc duration-300">Posts</button>
                     </li>
                 </ul>
             </div>
@@ -565,6 +569,66 @@ rounded-full font-medium">
 
     </div>
 
+    <!-- post -->
+    <div id="postModal"
+        class="fixed inset-0 z-[999] hidden bg-black/60 backdrop-blur-xl transition-all duration-500 overflow-y-auto">
+        <div class="max-w-6xl mx-auto min-h-screen p-6 md:p-12">
+
+            <div class="flex justify-between items-center mb-12 sticky top-0 z-10 py-4 bg-transparent">
+                <div>
+                    <h2 class="text-4xl font-black text-white italic tracking-tighter uppercase">Feed / Stories</h2>
+                    <div class="h-1 w-12 bg-indigo-500 mt-2 rounded-full"></div>
+                </div>
+                <button onclick="closePosts()"
+                    class="w-12 h-12 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white transition-all active:scale-90">
+                    ✕
+                </button>
+            </div>
+
+            <div id="postContainer" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="col-span-full py-20 text-center">
+                    <span class="text-zinc-500 animate-pulse font-medium tracking-widest uppercase text-xs">Fetching
+                        memories...</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div id="commentModal"
+        class="fixed inset-0 z-[1000] hidden bg-black/90 backdrop-blur-xl flex items-center justify-center p-4">
+        <div
+            class="bg-zinc-900 w-full max-w-lg rounded-[2.5rem] border border-white/10 flex flex-col overflow-hidden shadow-2xl h-[600px]">
+
+            <div class="p-6 border-b border-white/10 bg-white/5 flex justify-between items-center">
+                <h3 class="text-sm font-black text-white uppercase tracking-[0.3em] italic">Discussions</h3>
+                <button onclick="closeComments()" class="text-zinc-400 hover:text-white">✕</button>
+            </div>
+
+            <div id="commentList" class="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-hide text-white">
+            </div>
+
+            <div class="p-6 bg-black/40 border-t border-white/10">
+                <input type="hidden" id="activePostId">
+
+                <div class="space-y-3">
+                    <input type="text" id="commentUser" placeholder="Nama Kamu..."
+                        class="w-full bg-white/5 border border-white/10 p-3 rounded-xl text-sm text-indigo-300 outline-none focus:border-indigo-500">
+
+                    <div class="relative">
+                        <textarea id="commentText" placeholder="Tulis komentar..." rows="2"
+                            class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-sm text-white outline-none focus:border-indigo-500 resize-none"></textarea>
+
+                        <button onclick="sendComment()"
+                            class="absolute bottom-3 right-3 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                            Post
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Scripts -->
+
 
     <script>
         const text = document.getElementById("aboutText");
@@ -799,9 +863,193 @@ rounded-full font-medium">
     </script>
 
 
+
     <script>
         AOS.init();
     </script>
+    <script>
+
+
+    // --- FUNGSI POSTS (FEED) ---
+    async function openPosts() {
+        const modal = document.getElementById('postModal');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        const { data, error } = await _supabase
+            .from('posts')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error(error);
+            return;
+        }
+        renderPosts(data);
+    }
+
+    function closePosts() {
+        const modal = document.getElementById('postModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    function renderPosts(posts) {
+        const container = document.getElementById('postContainer');
+        if (!container) return;
+
+        container.innerHTML = posts.map(post => {
+            const isLong = post.description && post.description.length > 150;
+
+            return `
+            <article class="post-card group flex flex-col h-full rounded-[2.5rem] p-6 transition-all duration-500 bg-zinc-900/50 border border-white/5 shadow-xl overflow-hidden">
+                ${post.image_url ? `
+                    <div class="relative overflow-hidden rounded-[1.5rem] mb-5 shrink-0">
+                        <img src="${post.image_url}" class="w-full h-52 object-cover transform group-hover:scale-110 transition-transform duration-700">
+                    </div>
+                ` : ''}
+                
+                <div class="flex-grow min-w-0">
+                    <h3 class="text-xl font-bold text-white mb-3 group-hover:text-indigo-400 transition-colors break-words">${post.title}</h3>
+                    
+                    <div class="relative">
+                        <p id="desc-${post.id}" class="text-zinc-400 text-sm leading-relaxed whitespace-pre-line break-words transition-all duration-300 ${isLong ? 'line-clamp-3' : ''}">
+                            ${post.description}
+                        </p>
+                        
+                        ${isLong ? `
+                            <button onclick="toggleReadMore(${post.id}, this)" class="text-indigo-400 text-xs font-bold mt-2 hover:text-white transition-colors cursor-pointer block">
+                                Lihat Selengkapnya
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-white/5 flex justify-between items-center shrink-0">
+                    <button onclick="handleLike(${post.id}, ${post.likes || 0})" class="flex items-center gap-2 group/like cursor-pointer">
+                        <span class="text-xl group-hover/like:scale-125 transition-transform">❤️</span>
+                        <span id="like-count-${post.id}" class="text-zinc-500 text-sm font-medium">${post.likes || 0}</span>
+                    </button>
+                    
+                    <button onclick="openComments(${post.id})" class="bg-indigo-600/10 text-indigo-400 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border border-indigo-500/20 hover:bg-indigo-600 hover:text-white transition-all">
+                        💬 Comments
+                    </button>
+                </div>
+            </article>
+            `;
+        }).join('');
+    }
+
+    function toggleReadMore(id, btn) {
+        const p = document.getElementById(`desc-${id}`);
+        if (p.classList.contains('line-clamp-3')) {
+            p.classList.remove('line-clamp-3');
+            btn.innerText = 'Sembunyikan';
+        } else {
+            p.classList.add('line-clamp-3');
+            btn.innerText = 'Lihat Selengkapnya';
+        }
+    }
+
+    async function handleLike(id, currentLikes) {
+        const newLikes = currentLikes + 1;
+        const label = document.getElementById(`like-count-${id}`);
+        label.innerText = newLikes;
+        label.classList.add('text-pink-500');
+
+        await _supabase
+            .from('posts')
+            .update({ likes: newLikes })
+            .eq('id', id);
+    }
+
+    // --- FUNGSI KOMENTAR (POPUP) ---
+    async function openComments(postId) {
+        const modal = document.getElementById('commentModal');
+        const activeInput = document.getElementById('activePostId');
+        if (activeInput) activeInput.value = postId;
+
+        // PERBAIKAN: Selalu tambahkan 'flex' agar modal tetap di tengah
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        const list = document.getElementById('commentList');
+        list.innerHTML = `<div class="text-center py-10 animate-pulse text-zinc-600 text-xs uppercase tracking-widest">Loading chats...</div>`;
+
+        const { data, error } = await _supabase
+            .from('comments')
+            .select('*')
+            .eq('post_id', postId)
+            .order('created_at', { ascending: true });
+
+        if (error) return console.error(error);
+
+        if (data.length === 0) {
+            list.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full opacity-20">
+                <span class="text-4xl mb-2">💬</span>
+                <p class="text-[10px] uppercase font-bold tracking-widest">No conversation yet</p>
+            </div>`;
+        } else {
+            list.innerHTML = data.map(c => `
+                <div class="group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-400/10 px-2 py-0.5 rounded">${c.username}</span>
+                        <span class="text-[9px] text-zinc-600 font-medium">${new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div class="bg-white/[0.03] border border-white/5 p-4 rounded-2xl rounded-tl-none group-hover:bg-white/[0.05] transition-all">
+                        <p class="text-zinc-200 text-sm leading-relaxed break-words">${c.comment_text}</p>
+                    </div>
+                </div>
+            `).join('');
+            list.scrollTop = list.scrollHeight;
+        }
+    }
+
+    async function sendComment() {
+        const postIdInput = document.getElementById('activePostId');
+        const userInput = document.getElementById('commentUser');
+        const textInput = document.getElementById('commentText');
+
+        const postId = postIdInput.value;
+        const user = userInput.value.trim() || "Anonim";
+        const text = textInput.value.trim();
+
+        if (!postId) return alert("Error: ID tidak ditemukan!");
+        if (!text) return alert("Tulis komentarmu dulu!");
+
+        try {
+            const { error } = await _supabase
+                .from('comments')
+                .insert([{ post_id: parseInt(postId), username: user, comment_text: text }]);
+
+            if (error) throw error;
+            textInput.value = "";
+            openComments(postId);
+        } catch (err) {
+            alert("Gagal kirim: " + err.message);
+        }
+    }
+
+    function closeComments() {
+        const modal = document.getElementById('commentModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
+    // Tutup modal jika user klik di area luar box hitam (opsional tapi bagus)
+    window.addEventListener('click', (e) => {
+        const commentModal = document.getElementById('commentModal');
+        const postModal = document.getElementById('postModal');
+        if (e.target === commentModal) closeComments();
+        if (e.target === postModal) closePosts();
+    });
+</script>
+
 </body>
 
 
