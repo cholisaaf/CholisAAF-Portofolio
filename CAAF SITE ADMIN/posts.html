@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN PANEL - POSTS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #000; color: #fff; }
+        .card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); }
+        input, textarea { background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: white !important; }
+        .modal-scroll::-webkit-scrollbar { width: 5px; }
+        .modal-scroll::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+    </style>
+</head>
+
+<body class="p-6 md:p-12">
+
+    <div class="max-w-5xl mx-auto space-y-10">
+        
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent uppercase">Feed Controller</h1>
+                <p class="text-zinc-500 text-xs font-bold tracking-widest uppercase">Manage posts and moderate comments</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="operator.html" class="bg-indigo-600/10 hover:bg-indigo-600/20 px-5 py-2 rounded-full border border-indigo-500/30 text-indigo-400 text-xs transition font-bold uppercase tracking-widest">
+                    ← Dashboard
+                </a>
+                <a href="../index.html" class="bg-white/5 hover:bg-white/10 px-5 py-2 rounded-full border border-white/10 text-xs transition uppercase font-bold tracking-widest text-zinc-400">
+                    Back to Web
+                </a>
+            </div>
+        </div>
+
+        <div class="card p-8 rounded-[2rem] shadow-2xl">
+            <h1 id="formTitle" class="text-2xl font-black text-indigo-500 mb-6 uppercase italic">New Feed Post</h1>
+            <input type="hidden" id="editId">
+            <div class="space-y-4">
+                <input type="text" id="postTitle" placeholder="Judul Postingan" class="w-full p-4 rounded-xl outline-none focus:border-indigo-500 transition-all">
+                <div class="relative border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-indigo-500 cursor-pointer transition-all">
+                    <input type="file" id="postImageFile" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <p id="fileName" class="text-zinc-500 text-sm italic">📸 Pilih Foto Baru (Kosongkan jika tidak ganti)</p>
+                </div>
+                <textarea id="postDesc" rows="3" placeholder="Deskripsi status..." class="w-full p-4 rounded-xl outline-none focus:border-indigo-500 transition-all"></textarea>
+                <div class="flex gap-2">
+                    <button onclick="publish()" id="btnSave" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold uppercase transition-all shadow-lg shadow-indigo-500/20">Publish Now</button>
+                    <button id="btnCancel" onclick="resetForm()" class="hidden bg-zinc-700 hover:bg-zinc-600 px-6 rounded-xl font-bold uppercase transition-all">Batal</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-8 rounded-[2rem] overflow-hidden">
+            <h2 class="text-xl font-bold mb-6 text-zinc-400">Manage Posts & Comments</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10 text-zinc-500 uppercase text-[10px] tracking-widest font-black">
+                            <th class="p-4">Image</th>
+                            <th class="p-4">Content</th>
+                            <th class="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="commentModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-white/10 w-full max-w-2xl rounded-[2rem] overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="p-6 border-b border-white/5 flex justify-between items-center">
+                <div>
+                    <h3 class="font-black text-indigo-400 uppercase italic">Manage Comments</h3>
+                    <p id="targetPostTitle" class="text-xs text-zinc-500 truncate w-64"></p>
+                </div>
+                <button onclick="closeCommentModal()" class="text-zinc-500 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="commentContainer" class="p-6 overflow-y-auto modal-scroll space-y-4 flex-grow"></div>
+        </div>
+    </div>
+
+    <script>
+        // ... (Logika Supabase & JS kamu tetap sama seperti sebelumnya) ...
+        const SB_URL = 'https://vnzcwijqlkdsjokvmpgv.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuemN3aWpxbGtkc2pva3ZtcGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTE0MzEsImV4cCI6MjA4NzgyNzQzMX0.LS7XzMXOknHl6zhobn5oyMiG5bHqu2zucSKF0n_NGEE';
+        const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+        window.onload = fetchPosts;
+
+        async function fetchPosts() {
+            const { data, error } = await _supabase.from('posts').select('*').order('created_at', { ascending: false });
+            if (error) return console.error(error);
+
+            const tbody = document.getElementById('postTableBody');
+            tbody.innerHTML = data.map(p => `
+                <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+                    <td class="p-4"><img src="${p.image_url || 'https://via.placeholder.com/50'}" class="w-12 h-12 object-cover rounded-lg border border-white/10"></td>
+                    <td class="p-4">
+                        <div class="font-bold text-white">${p.title}</div>
+                        <div class="text-zinc-500 text-[10px] mb-2">${new Date(p.created_at).toLocaleDateString()}</div>
+                        <div class="flex gap-3">
+                            <button onclick="openCommentModal('${p.id}', '${encodeURIComponent(p.title)}')" class="text-[9px] bg-indigo-500/10 px-2 py-1 rounded text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all font-black uppercase tracking-tighter border border-indigo-500/20">💬 Kelola Komentar</button>
+                        </div>
+                    </td>
+                    <td class="p-4 text-right">
+                        <button onclick="editMode('${p.id}', '${encodeURIComponent(p.title)}', '${encodeURIComponent(p.description)}')" class="text-xs text-indigo-400 hover:underline mr-3 font-bold uppercase">Edit</button>
+                        <button onclick="deletePost('${p.id}')" class="text-xs text-red-500 hover:underline font-bold uppercase">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function openCommentModal(postId, title) {
+            const modal = document.getElementById('commentModal');
+            const container = document.getElementById('commentContainer');
+            document.getElementById('targetPostTitle').innerText = "Post: " + decodeURIComponent(title);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            container.innerHTML = `<p class="text-center text-zinc-600 animate-pulse">Loading comments...</p>`;
+            const { data, error } = await _supabase.from('comments').select('*').eq('post_id', postId).order('created_at', { ascending: false });
+            if (error) return console.error(error);
+            if (data.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 text-zinc-600 italic">Tidak ada komentar di postingan ini.</div>`;
+            } else {
+                container.innerHTML = data.map(c => `
+                    <div class="bg-white/5 p-4 rounded-2xl flex justify-between items-start gap-4 border border-white/5">
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-indigo-400 font-black text-[10px] uppercase tracking-tighter bg-indigo-400/10 px-2 py-0.5 rounded">${c.username}</span>
+                                <span class="text-[9px] text-zinc-600">${new Date(c.created_at).toLocaleString()}</span>
+                            </div>
+                            <p class="text-sm text-zinc-300">${c.comment_text}</p>
+                        </div>
+                        <button onclick="deleteComment('${c.id}', '${postId}', '${title}')" class="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg transition-all font-bold uppercase">Hapus</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function deleteComment(commentId, postId, title) {
+            if (!confirm("Hapus komentar ini?")) return;
+            const { error } = await _supabase.from('comments').delete().eq('id', commentId);
+            if (error) alert("Gagal hapus: " + error.message);
+            else openCommentModal(postId, title);
+        }
+
+        function closeCommentModal() {
+            document.getElementById('commentModal').classList.add('hidden');
+            document.getElementById('commentModal').classList.remove('flex');
+        }
+
+        async function publish() {
+            const id = document.getElementById('editId').value;
+            const title = document.getElementById('postTitle').value;
+            const desc = document.getElementById('postDesc').value;
+            const file = document.getElementById('postImageFile').files[0];
+            const btn = document.getElementById('btnSave');
+            if (!title || !desc) return alert("Isi Judul & Deskripsi!");
+            btn.innerText = "Processing..."; btn.disabled = true;
+            try {
+                let imgUrl = "";
+                if (file) {
+                    const name = Date.now() + "_" + file.name;
+                    await _supabase.storage.from('post-images').upload(name, file);
+                    imgUrl = _supabase.storage.from('post-images').getPublicUrl(name).data.publicUrl;
+                }
+                if (id) {
+                    const updateData = { title, description: desc };
+                    if (imgUrl) updateData.image_url = imgUrl;
+                    await _supabase.from('posts').update(updateData).eq('id', id);
+                } else {
+                    await _supabase.from('posts').insert([{ title, description: desc, image_url: imgUrl, likes: 0 }]);
+                }
+                resetForm(); fetchPosts();
+            } catch (e) { alert(e.message); }
+            finally { btn.innerText = "Publish Now"; btn.disabled = false; }
+        }
+
+        async function deletePost(id) {
+            if (!confirm("Yakin mau hapus postingan ini?")) return;
+            await _supabase.from('posts').delete().eq('id', id);
+            fetchPosts();
+        }
+
+        function editMode(id, title, desc) {
+            document.getElementById('editId').value = id;
+            document.getElementById('postTitle').value = decodeURIComponent(title);
+            document.getElementById('postDesc').value = decodeURIComponent(desc);
+            document.getElementById('formTitle').innerText = "Edit Postingan";
+            document.getElementById('btnSave').innerText = "Update Post";
+            document.getElementById('btnCancel').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = "";
+            document.getElementById('postTitle').value = "";
+            document.getElementById('postDesc').value = "";
+            document.getElementById('postImageFile').value = "";
+            document.getElementById('fileName').innerText = "📸 Pilih Foto Baru (Kosongkan jika tidak ganti)";
+            document.getElementById('formTitle').innerText = "New Feed Post";
+            document.getElementById('btnSave').innerText = "Publish Now";
+            document.getElementById('btnCancel').classList.add('hidden');
+        }
+
+        document.getElementById('postImageFile').onchange = e => {
+            if (e.target.files[0]) document.getElementById('fileName').innerText = "✅ " + e.target.files[0].name;
+        };
+    </script>
+</body>
+
+</html>

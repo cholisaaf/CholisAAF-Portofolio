@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Admin - Music Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-zinc-950 text-white min-h-screen p-4 md:p-10 font-sans">
+
+    <div class="max-w-4xl mx-auto">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent italic uppercase">Music Controller</h1>
+                <p class="text-zinc-500 text-sm">Manage your playlist, order, and details.</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="operator.html" class="bg-indigo-600/10 hover:bg-indigo-600/20 px-5 py-2 rounded-full border border-indigo-500/30 text-indigo-400 text-sm transition font-bold">
+                    ← Dashboard Admin
+                </a>
+                <a href="../index.html" class="bg-white/5 hover:bg-white/10 px-5 py-2 rounded-full border border-white/10 text-sm transition">
+                    Back to Web
+                </a>
+            </div>
+        </div>
+
+        <div id="formContainer" class="bg-zinc-900 p-6 rounded-2xl border border-white/10 mb-10 shadow-2xl">
+            <h2 id="formTitle" class="text-lg font-semibold mb-4 text-indigo-400">Add New Song</h2>
+            <input type="hidden" id="editId">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase text-zinc-500 font-bold ml-1">Title</label>
+                    <input type="text" id="songTitleInput" placeholder="Piano Man" class="w-full bg-black/50 border border-white/10 p-3 rounded-xl outline-none focus:border-indigo-500 transition">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] uppercase text-zinc-500 font-bold ml-1">MP3 Link / Spotify URL</label>
+                    <input type="text" id="songSrcInput" placeholder="music/pianoman.mp3" class="w-full bg-black/50 border border-white/10 p-3 rounded-xl outline-none focus:border-indigo-500 transition">
+                </div>
+            </div>
+            <div class="flex gap-2 mt-4">
+                <button id="saveBtn" onclick="handleSave()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-bold transition shadow-lg shadow-indigo-500/20">Save Music</button>
+                <button id="cancelBtn" onclick="resetForm()" class="hidden bg-zinc-800 hover:bg-zinc-700 px-6 py-3 rounded-xl font-bold transition">Cancel</button>
+            </div>
+        </div>
+
+        <div class="bg-zinc-900 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-white/5 text-zinc-400 text-[10px] uppercase tracking-widest font-black">
+                    <tr>
+                        <th class="p-4 w-12 text-center">Order</th>
+                        <th class="p-4">Song Info</th>
+                        <th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="songTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://vnzcwijqlkdsjokvmpgv.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuemN3aWpxbGtkc2pva3ZtcGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTE0MzEsImV4cCI6MjA4NzgyNzQzMX0.LS7XzMXOknHl6zhobn5oyMiG5bHqu2zucSKF0n_NGEE';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let localPlaylist = [];
+
+        async function loadData() {
+            const { data, error } = await _supabase.from('playlist').select('*').order('priority', { ascending: true });
+            if (data) {
+                localPlaylist = data;
+                renderTable();
+            }
+        }
+
+        // Otomatis convert spotify link jika ditempel
+        function processSpotifyLink(url) {
+            if (url.includes('spotify.com/track/')) {
+                const trackId = url.split('track/')[1].split('?')[0];
+                return `https://open.spotify.com/embed/track/${trackId}`;
+            }
+            return url;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('songTableBody');
+            tbody.innerHTML = localPlaylist.length ? "" : `<tr><td colspan="3" class="p-10 text-center text-zinc-600 italic">No songs found. Add some!</td></tr>`;
+            
+            localPlaylist.forEach((song, index) => {
+                const isSpotify = song.src.includes('spotify.com/embed');
+                tbody.innerHTML += `
+                    <tr class="border-t border-white/5 hover:bg-white/5 transition group">
+                        <td class="p-4 text-center">
+                            <div class="flex flex-col items-center gap-1">
+                                <button onclick="reorder(${index}, 'up')" class="hover:text-indigo-400 text-xs">▲</button>
+                                <span class="text-xs font-mono text-zinc-500">${song.priority}</span>
+                                <button onclick="reorder(${index}, 'down')" class="hover:text-indigo-400 text-xs">▼</button>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-2">
+                                <div class="font-bold text-white">${song.title}</div>
+                                ${isSpotify ? '<span class="text-[8px] bg-green-500/20 text-green-400 px-1 rounded border border-green-500/30 font-black">SPOTIFY</span>' : ''}
+                            </div>
+                            <div class="text-[10px] text-zinc-500 truncate max-w-[200px]">${song.src}</div>
+                        </td>
+                        <td class="p-4 text-right space-x-3">
+                            <button onclick="editMode(${index})" class="text-xs text-indigo-400 hover:underline font-bold">Edit</button>
+                            <button onclick="deleteSong(${song.id})" class="text-xs text-red-500 hover:underline font-bold">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function handleSave() {
+            const id = document.getElementById('editId').value;
+            const title = document.getElementById('songTitleInput').value;
+            let src = document.getElementById('songSrcInput').value;
+
+            if (!title || !src) return alert("Fill everything!");
+            
+            src = processSpotifyLink(src);
+
+            if (id) {
+                await _supabase.from('playlist').update({ title, src }).eq('id', id);
+            } else {
+                const maxPriority = localPlaylist.length > 0 ? Math.max(...localPlaylist.map(s => s.priority)) : 0;
+                await _supabase.from('playlist').insert([{ title, src, priority: maxPriority + 1 }]);
+            }
+            resetForm();
+            loadData();
+        }
+
+        async function reorder(index, dir) {
+            const target = dir === 'up' ? index - 1 : index + 1;
+            if (target < 0 || target >= localPlaylist.length) return;
+            const current = localPlaylist[index];
+            const other = localPlaylist[target];
+            await _supabase.from('playlist').update({ priority: other.priority }).eq('id', current.id);
+            await _supabase.from('playlist').update({ priority: current.priority }).eq('id', other.id);
+            loadData();
+        }
+
+        async function deleteSong(id) {
+            if (confirm("Delete this song?")) {
+                await _supabase.from('playlist').delete().eq('id', id);
+                loadData();
+            }
+        }
+
+        function editMode(index) {
+            const song = localPlaylist[index];
+            document.getElementById('editId').value = song.id;
+            document.getElementById('songTitleInput').value = song.title;
+            document.getElementById('songSrcInput').value = song.src;
+            document.getElementById('formTitle').innerText = "Edit Music Info";
+            document.getElementById('saveBtn').innerText = "Update Music";
+            document.getElementById('cancelBtn').classList.remove('hidden');
+        }
+
+        function resetForm() {
+            document.getElementById('editId').value = "";
+            document.getElementById('songTitleInput').value = "";
+            document.getElementById('songSrcInput').value = "";
+            document.getElementById('formTitle').innerText = "Add New Song";
+            document.getElementById('saveBtn').innerText = "Save Music";
+            document.getElementById('cancelBtn').classList.add('hidden');
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
