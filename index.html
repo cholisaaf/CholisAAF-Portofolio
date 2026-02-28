@@ -71,12 +71,31 @@
                     class="self-center nav-link mc transition-colors duration-300 mt-2 mc text-xl text-heading font-semibold whitespace-nowrap"
                     data-aos="fade-right" data-aos-duration="1500">CHOLISAAF</span>
             </div>
+            <div class="flex items-center space-x-4 bg-white/10 px-4 rounded-full border border-white/20 ml-auto mr-4 group hover:bg-white/20 transition-all duration-300"
+                data-aos="fade-down" data-aos-duration="1200">
+                <div class="flex flex-col items-start hidden sm:block">
+                    <span class="text-[10px] nav-link mc transition-colors duration-300 uppercase tracking-widest font-bold">Now Playing</span>
+                    <marquee id="songTitle" class="text-xs nav-link mc transition-colors duration-300 w-24 leading-tight">Loading...</marquee>
+                </div>
+
+                <audio id="bgMusic"></audio>
+
+                <button onclick="toggleMusic()" id="musicBtn"
+                    class="w-8 h-8 flex items-center justify-center bg-white text-black rounded-full hover:scale-110 transition-transform active:scale-95">
+                    <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                        class="w-4 h-4">
+                        <path fill-rule="evenodd"
+                            d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z"
+                            clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
             <button data-collapse-toggle="navbar-default" type="button"
                 class="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-body rounded-base md:hidden hover:bg-neutral-secondary-soft hover:text-heading focus:outline-none focus:ring-2 focus:ring-neutral-tertiary"
                 aria-controls="navbar-default" aria-expanded="false">
                 <span class="sr-only">Open main menu</span>
-                <svg class="w-6 h-6 nav-link mc transition-colors duration-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                    fill="none" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 nav-link mc transition-colors duration-300" aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                     <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h14" />
                 </svg>
             </button>
@@ -122,11 +141,15 @@
         <div class="bg-black py-60 section dark-section" id="about">
             <h1 class="mc text-white text-center text-3xl mx-auto pt-2 flickers w-48" data-aos="fade-up"
                 data-aos-duration="1500">About Me</h1>
-            <div class="md:grid md:grid-cols-2 lg:grid lg:grid-cols-2 2xl:grid 2xl:grid-cols-2 xl:grid xl:grid-cols-2 mt-10 2xl:mt-40 xl:mt-40 lg:mt-40 md:mt-40">
-                <div class="mx-auto lg:px-20 xl:px-20 2xl:px-20 md:px-20 px-10" data-aos="fade-right" data-aos-duration="1500">
-                    <div class="mx-auto md:hidden xl:hidden lg:hidden 2xl:hidden" data-aos="flip-left" data-aos-duration="1500">
-                    <img src="img/profile.svg" class="md:w-80 lg:w-80 xl:w-80 2xl:w-80 w-60 mx-auto mb-10 md:mb-0 lg:mb-0 xl:mb-0 2xl:mb-0">
-                </div>
+            <div
+                class="md:grid md:grid-cols-2 lg:grid lg:grid-cols-2 2xl:grid 2xl:grid-cols-2 xl:grid xl:grid-cols-2 mt-10 2xl:mt-40 xl:mt-40 lg:mt-40 md:mt-40">
+                <div class="mx-auto lg:px-20 xl:px-20 2xl:px-20 md:px-20 px-10" data-aos="fade-right"
+                    data-aos-duration="1500">
+                    <div class="mx-auto md:hidden xl:hidden lg:hidden 2xl:hidden" data-aos="flip-left"
+                        data-aos-duration="1500">
+                        <img src="img/profile.svg"
+                            class="md:w-80 lg:w-80 xl:w-80 2xl:w-80 w-60 mx-auto mb-10 md:mb-0 lg:mb-0 xl:mb-0 2xl:mb-0">
+                    </div>
                     <h1 class="mc text-white text-xl" id="aboutText">Hi, My Name is <span class="rainbow-text">Cholis
                             Abdullah Alfikri</span> <img class="inline w-8" src="img/waving-hand-svgrepo-com.svg"
                             alt=""> ! <br>I'm from
@@ -145,7 +168,8 @@ rounded-full font-medium">
                         ~<br>Kalau hidup mau lurus ~<br>Jangan mundur, maju terus.</h1>
                 </div>
 
-                <div class="mx-auto hidden md:block xl:block lg:block 2xl:block" data-aos="flip-left" data-aos-duration="1500">
+                <div class="mx-auto hidden md:block xl:block lg:block 2xl:block" data-aos="flip-left"
+                    data-aos-duration="1500">
                     <img src="img/profile.svg" class="w-80">
                 </div>
             </div>
@@ -157,7 +181,8 @@ rounded-full font-medium">
             <h1 class="mc text-black mt-60 text-center text-3xl mx-auto pt-2 flickerss w-48" data-aos="fade-up"
                 data-aos-duration="1500">Skills</h1>
             <div class="md:mt-40 mt-10 2xl:mt-40 xl:mt-40 lg:mt-40 mx-10 md:mx-20 2xl:mx-20 xl:mx-20 lg:mx-20">
-                <div class="md:grid md:grid-cols-3 lg:grid 2xl:grid 2xl:grid-cols-3 lg:grid-cols-3 xl:grid xl:grid-cols-3">
+                <div
+                    class="md:grid md:grid-cols-3 lg:grid 2xl:grid 2xl:grid-cols-3 lg:grid-cols-3 xl:grid xl:grid-cols-3">
                     <div data-aos="fade-up" data-aos-duration="1500"
                         class="h-80 bg-gradient-to-br from-slate-900 via-slate-500 to-slate-50 rounded-2xl md:mr-5 lg:mr-5 xl:mr-5 2xl:mr-5 mb-5 md:mb-0 lg:mb-0 xl:mb-0 2xl:mb-0 overflow-auto">
                         <div class="m-5">
@@ -215,7 +240,8 @@ rounded-full font-medium">
 
                     </div>
                 </div>
-                <div class="md:grid md:grid-cols-3 md:mt-5 2xl:mt-5 xl:mt-5 lg:mt-5 lg:grid 2xl:grid 2xl:grid-cols-3 lg:grid-cols-3 xl:grid xl:grid-cols-3">
+                <div
+                    class="md:grid md:grid-cols-3 md:mt-5 2xl:mt-5 xl:mt-5 lg:mt-5 lg:grid 2xl:grid 2xl:grid-cols-3 lg:grid-cols-3 xl:grid xl:grid-cols-3">
                     <div data-aos="fade-up" data-aos-duration="1500"
                         class="h-80 bg-gradient-to-br from-slate-900 via-slate-500 to-slate-50 rounded-2xl md:mr-5 lg:mr-5 xl:mr-5 2xl:mr-5 mb-5 md:mb-0 lg:mb-0 xl:mb-0 2xl:mb-0 overflow-auto">
                         <div class="m-5">
@@ -278,9 +304,11 @@ rounded-full font-medium">
         </div>
 
         <div class="py-10 section light-section bg-white w-full overflow-hidden" id="gallery">
-            <h1 data-aos="fade-up" data-aos-duration="1500" class="mc text-black mt-20 md:mt-60 text-center text-3xl font-bold mb-10">Gallery</h1>
+            <h1 data-aos="fade-up" data-aos-duration="1500"
+                class="mc text-black mt-20 md:mt-60 text-center text-3xl font-bold mb-10">Gallery</h1>
 
-            <div data-aos="fade-up" data-aos-duration="1500" class="py-10 section bg-white overflow-hidden w-full mt-20">
+            <div data-aos="fade-up" data-aos-duration="1500"
+                class="py-10 section bg-white overflow-hidden w-full mt-20">
                 <div class="pause-on-hover overflow-hidden w-full relative group">
 
                     <div id="auto-slider" class="animate-scroll flex gap-4 md:gap-8 px-4">
@@ -428,7 +456,8 @@ rounded-full font-medium">
                         <input type="hidden" name="access_key" value="4587ced1-b108-406e-b383-2629d7b064f0">
 
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-white/30 uppercase tracking-widest ml-1 mc">NAMA</label>
+                            <label
+                                class="text-xs font-bold text-white/30 uppercase tracking-widest ml-1 mc">NAMA</label>
                             <input type="text" name="namanya" autocomplete="name" required placeholder="Ex: Cholis AAF"
                                 class="input-field mc">
                         </div>
@@ -441,9 +470,9 @@ rounded-full font-medium">
                         </div> -->
 
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-white/30 uppercase tracking-widest ml-1">PESANMU</label>
-                            <textarea name="pesannya" required rows="4"
-                                placeholder="Bakpau enak tau"
+                            <label
+                                class="text-xs font-bold text-white/30 uppercase tracking-widest ml-1">PESANMU</label>
+                            <textarea name="pesannya" required rows="4" placeholder="Bakpau enak tau"
                                 class="input-field resize-none mc"></textarea>
                         </div>
 
@@ -626,7 +655,7 @@ rounded-full font-medium">
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            document.body.style.overflow = 'hidden'; 
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
@@ -680,6 +709,63 @@ rounded-full font-medium">
                 });
         });
     </script>
+    <script>
+        const audio = document.getElementById('bgMusic');
+const songTitle = document.getElementById('songTitle');
+const playIcon = document.getElementById('playIcon');
+
+
+const playlist = [
+    { title: "Piano Man - Billy Joel", src: "music/pianoman.mp3" },
+    { title: "Chill Night", src: "music/track2.mp3" },
+    { title: "Morning Coffee", src: "music/track3.mp3" }
+];
+
+let currentSongIndex = 0;
+
+
+function loadSong(index) {
+    audio.src = playlist[index].src;
+    songTitle.innerText = playlist[index].title;
+    audio.volume = 0.4;
+}
+
+loadSong(currentSongIndex);
+
+
+function toggleMusic() {
+    if (audio.paused) {
+        audio.play();
+        updateIcon(true);
+    } else {
+        audio.pause();
+        updateIcon(false);
+    }
+}
+
+
+audio.addEventListener('ended', function() {
+    currentSongIndex++;
+    
+
+    if (currentSongIndex >= playlist.length) {
+        currentSongIndex = 0;
+    }
+    
+    loadSong(currentSongIndex);
+    audio.play();
+    updateIcon(true);
+});
+
+
+function updateIcon(isPlaying) {
+    if (isPlaying) {
+        playIcon.innerHTML = `<path fill-rule="evenodd" d="M6.75 5.25a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0v-12a.75.75 0 01.75-.75zm9 0a.75.75 0 01.75.75v12a.75.75 0 01-1.5 0v-12a.75.75 0 01.75-.75z" clip-rule="evenodd" />`;
+    } else {
+        playIcon.innerHTML = `<path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd" />`;
+    }
+}
+    </script>
 
 
     <script>
@@ -689,10 +775,3 @@ rounded-full font-medium">
 
 
 </html>
-
-
-
-
-
-
-
