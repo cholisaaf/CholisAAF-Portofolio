@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MASTER MUSIC - UPLOAD & MANAGE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        opacity: 0;
+        transition: opacity 0.5s;
+        background: #000;
+        color: #fff;
+        min-height: 100vh;
+      }
+      input {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body class="p-6 md:p-12">
+    <div class="fixed top-6 right-6 z-[9999]">
+      <div
+        class="bg-black/80 border border-white/10 px-5 py-2 rounded-full flex items-center gap-3 shadow-2xl"
+      >
+        <span class="text-[10px] text-zinc-500 font-black uppercase"
+          >Session:</span
+        >
+        <span
+          id="universalTimer"
+          class="font-mono text-indigo-400 font-bold text-sm"
+          >10:00</span
+        >
+      </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+      <div class="flex justify-between items-center mb-10">
+        <h1
+          class="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent uppercase"
+        >
+          Music Manager
+        </h1>
+        <a
+          href="index.html"
+          class="text-xs font-bold text-zinc-500 hover:text-white transition"
+          >← KEMBALI</a
+        >
+      </div>
+
+      <div class="glass p-8 rounded-[2.5rem] mb-10">
+        <h2
+          id="formTitle"
+          class="text-xl font-bold mb-6 text-indigo-400 italic"
+        >
+          TAMBAH LAGU BARU
+        </h2>
+        <input type="hidden" id="editId" />
+
+        <div class="space-y-5">
+          <div>
+            <label class="text-[10px] uppercase text-zinc-500 font-bold ml-1"
+              >Judul Lagu</label
+            >
+            <input
+              type="text"
+              id="songTitle"
+              placeholder="Nama Artis - Judul Lagu"
+              class="w-full p-4 rounded-2xl outline-none focus:border-indigo-500 transition text-sm"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              class="relative border-2 border-dashed border-white/10 rounded-2xl p-6 text-center hover:border-indigo-500 transition cursor-pointer"
+            >
+              <input
+                type="file"
+                id="audioFile"
+                accept="audio/*"
+                class="absolute inset-0 opacity-0 cursor-pointer"
+                onchange="
+                  document.getElementById('fileStatus').innerText =
+                    '✅ ' + this.files[0].name
+                "
+              />
+              <p id="fileStatus" class="text-xs text-zinc-500 italic">
+                Upload File Audio (.mp3)
+              </p>
+            </div>
+            <div>
+              <input
+                type="text"
+                id="songSrc"
+                placeholder="Atau paste link audio (Discord dll)"
+                class="w-full p-6 rounded-2xl outline-none focus:border-indigo-500 transition text-sm font-mono"
+              />
+            </div>
+          </div>
+
+          <button
+            id="btnSave"
+            onclick="handleSave()"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-lg shadow-indigo-600/20"
+          >
+            Simpan Lagu
+          </button>
+        </div>
+      </div>
+
+      <div class="glass rounded-[2.5rem] overflow-hidden">
+        <table class="w-full text-left text-sm">
+          <thead
+            class="bg-white/5 text-[10px] uppercase font-black text-zinc-500 tracking-widest"
+          >
+            <tr>
+              <th class="p-5 text-center w-20">Urutan</th>
+              <th class="p-5">Informasi Lagu</th>
+              <th class="p-5 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="listLagu"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+      const _supabase = createClient(
+        "https://vnzcwijqlkdsjokvmpgv.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuemN3aWpxbGtkc2pva3ZtcGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTE0MzEsImV4cCI6MjA4NzgyNzQzMX0.LS7XzMXOknHl6zhobn5oyMiG5bHqu2zucSKF0n_NGEE",
+      );
+
+      let playlistData = [];
+
+      // --- SECURITY & UNIVERSAL TIMER (SINKRON KE SEMUA HALAMAN) ---
+      const kickUser = () => {
+        localStorage.removeItem("admin_session");
+        window.location.replace("login.html");
+      };
+
+      const runSecurity = async () => {
+        const sessionStr = localStorage.getItem("admin_session");
+        if (!sessionStr) return kickUser();
+        const session = JSON.parse(sessionStr);
+        const now = Math.floor(Date.now() / 1000);
+        const timeLeft = session.expires_at - now;
+
+        document.getElementById("universalTimer").innerText =
+          `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`;
+        if (timeLeft <= 0) return kickUser();
+
+        // Check Remote Tiap 10 Detik
+        if (now % 10 === 0) {
+          const { data } = await _supabase
+            .from("admin_access")
+            .select("email")
+            .eq("email", session.user.email)
+            .single();
+          if (!data) return kickUser();
+        }
+
+        if (document.body.style.opacity !== "1") {
+          document.body.style.opacity = "1";
+          fetchLagu();
+        }
+      };
+
+      // --- LOGIKA MUSIC & UPLOAD ---
+      window.fetchLagu = async () => {
+        const { data } = await _supabase
+          .from("playlist")
+          .select("*")
+          .order("priority", { ascending: true });
+        if (data) {
+          playlistData = data;
+          renderTable();
+        }
+      };
+
+      window.handleSave = async () => {
+        const title = document.getElementById("songTitle").value;
+        const manualLink = document.getElementById("songSrc").value;
+        const fileInput = document.getElementById("audioFile");
+        const id = document.getElementById("editId").value;
+        const btn = document.getElementById("btnSave");
+
+        if (!title) return alert("Isi judul dulu!");
+        btn.innerText = "SEDANG UPLOAD...";
+        btn.disabled = true;
+
+        try {
+          let finalLink = manualLink;
+
+          // JIKA ADA FILE DIUPLOAD
+          if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
+
+            const { data: up, error: err } = await _supabase.storage
+              .from("music-files")
+              .upload(fileName, file);
+            if (err) throw err;
+
+            const { data: linkData } = _supabase.storage
+              .from("music-files")
+              .getPublicUrl(fileName);
+            finalLink = linkData.publicUrl;
+          }
+
+          if (!finalLink)
+            throw new Error("Pilih file audio atau masukkan link!");
+
+          if (id) {
+            await _supabase
+              .from("playlist")
+              .update({ title, src: finalLink })
+              .eq("id", id);
+          } else {
+            const nextPrio = playlistData.length
+              ? Math.max(...playlistData.map((s) => s.priority)) + 1
+              : 1;
+            await _supabase
+              .from("playlist")
+              .insert([{ title, src: finalLink, priority: nextPrio }]);
+          }
+
+          location.reload();
+        } catch (e) {
+          alert(e.message);
+          btn.innerText = "Simpan Lagu";
+          btn.disabled = false;
+        }
+      };
+
+      window.renderTable = () => {
+        document.getElementById("listLagu").innerHTML = playlistData
+          .map(
+            (s, i) => `
+          <tr class="border-t border-white/5 hover:bg-white/[0.02]">
+            <td class="p-5 text-center">
+              <div class="flex flex-col items-center gap-1 text-zinc-600">
+                <button onclick="move(${i}, 'up')" class="hover:text-indigo-400">▲</button>
+                <span class="font-mono text-[10px]">${s.priority}</span>
+                <button onclick="move(${i}, 'down')" class="hover:text-indigo-400">▼</button>
+              </div>
+            </td>
+            <td class="p-5">
+              <div class="font-bold">${s.title}</div>
+              <div class="text-[9px] text-zinc-500 font-mono truncate max-w-xs">${s.src}</div>
+            </td>
+            <td class="p-5 text-right">
+              <button onclick="editMode(${i})" class="text-indigo-400 font-bold mr-3 text-xs">EDIT</button>
+              <button onclick="del(${s.id})" class="text-red-500 font-bold text-xs">HAPUS</button>
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      };
+
+      window.move = async (i, dir) => {
+        const targetIdx = dir === "up" ? i - 1 : i + 1;
+        if (targetIdx < 0 || targetIdx >= playlistData.length) return;
+        const cur = playlistData[i],
+          tar = playlistData[targetIdx];
+        await _supabase
+          .from("playlist")
+          .update({ priority: tar.priority })
+          .eq("id", cur.id);
+        await _supabase
+          .from("playlist")
+          .update({ priority: cur.priority })
+          .eq("id", tar.id);
+        fetchLagu();
+      };
+
+      window.del = async (id) => {
+        if (confirm("Hapus lagu?")) {
+          await _supabase.from("playlist").delete().eq("id", id);
+          fetchLagu();
+        }
+      };
+
+      window.editMode = (i) => {
+        const s = playlistData[i];
+        document.getElementById("editId").value = s.id;
+        document.getElementById("songTitle").value = s.title;
+        document.getElementById("songSrc").value = s.src;
+        document.getElementById("formTitle").innerText = "EDIT LAGU";
+        window.scrollTo(0, 0);
+      };
+
+      setInterval(runSecurity, 1000);
+      runSecurity();
+    </script>
+  </body>
+</html>

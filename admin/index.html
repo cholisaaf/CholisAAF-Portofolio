@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MASTER ADMIN - DASHBOARD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      body {
+        opacity: 0;
+        background: #000;
+        color: #fff;
+        background-image:
+          radial-gradient(
+            circle at 10% 20%,
+            rgba(79, 70, 229, 0.1) 0%,
+            transparent 40%
+          ),
+          radial-gradient(
+            circle at 90% 80%,
+            rgba(6, 182, 212, 0.1) 0%,
+            transparent 40%
+          );
+        transition: opacity 0.5s ease-in-out;
+        min-height: screen;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .glass-card:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(99, 102, 241, 0.5);
+        transform: translateY(-10px);
+      }
+    </style>
+  </head>
+
+  <body class="flex items-center justify-center min-h-screen p-6">
+    <div class="fixed top-6 right-6 z-[9999]">
+      <div
+        class="bg-black/80 backdrop-blur-md border border-white/10 px-5 py-2.5 rounded-full flex items-center gap-3 shadow-2xl"
+      >
+        <div class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+        <span
+          class="text-[10px] text-zinc-500 font-black uppercase tracking-widest"
+          >Session:</span
+        >
+        <span
+          id="universalTimer"
+          class="font-mono text-indigo-400 font-bold text-sm"
+          >10:00</span
+        >
+      </div>
+    </div>
+
+    <div class="max-w-4xl w-full">
+      <div class="text-center mb-16">
+        <h1
+          class="text-5xl md:text-6xl font-black italic tracking-tighter bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent uppercase"
+        >
+          Control Center
+        </h1>
+        <p
+          class="text-zinc-500 mt-4 tracking-[0.3em] text-[10px] font-bold uppercase"
+        >
+          Welcome Back,
+          <span id="adminDisplayEmail" class="text-indigo-400">Master</span>
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <a
+          href="music.html"
+          class="glass-card group p-10 rounded-[2.5rem] flex flex-col items-center text-center relative overflow-hidden"
+        >
+          <div
+            class="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform shadow-lg shadow-indigo-600/20"
+          >
+            🎵
+          </div>
+          <h2
+            class="text-2xl font-black uppercase italic text-white group-hover:text-indigo-400 transition-colors"
+          >
+            Music Manager
+          </h2>
+          <p class="text-zinc-500 text-sm mt-3 leading-relaxed">
+            Kelola playlist, urutan lagu,<br />dan integrasi Spotify.
+          </p>
+        </a>
+
+        <a
+          href="posts.html"
+          class="glass-card group p-10 rounded-[2.5rem] flex flex-col items-center text-center relative overflow-hidden"
+        >
+          <div
+            class="w-20 h-20 bg-pink-600 rounded-3xl flex items-center justify-center mb-6 text-3xl group-hover:scale-110 transition-transform shadow-lg shadow-pink-600/20"
+          >
+            📝
+          </div>
+          <h2
+            class="text-2xl font-black uppercase italic text-white group-hover:text-pink-400 transition-colors"
+          >
+            Post Manager
+          </h2>
+          <p class="text-zinc-500 text-sm mt-3 leading-relaxed">
+            Atur postingan blog, konten,<br />dan interaksi komentar.
+          </p>
+        </a>
+      </div>
+
+      <div class="mt-20 text-center flex flex-col items-center gap-6">
+        <div class="flex items-center gap-6">
+          <a
+            href="../index.html"
+            class="text-zinc-500 hover:text-white text-[10px] font-bold uppercase tracking-[0.2em] transition-colors flex items-center gap-2"
+          >
+            <span>←</span> Website Utama
+          </a>
+          <div class="w-1 h-1 bg-zinc-800 rounded-full"></div>
+          <button
+            onclick="window.logoutAdmin()"
+            class="text-red-500/50 hover:text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] transition-colors"
+          >
+            Logout Dashboard
+          </button>
+        </div>
+        <p class="text-zinc-800 text-[9px] font-bold tracking-widest uppercase">
+          &copy; 2026 CHOLISAAF MASTER SYSTEM
+        </p>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+      const SUPABASE_URL = "https://vnzcwijqlkdsjokvmpgv.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuemN3aWpxbGtkc2pva3ZtcGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTE0MzEsImV4cCI6MjA4NzgyNzQzMX0.LS7XzMXOknHl6zhobn5oyMiG5bHqu2zucSKF0n_NGEE";
+
+      const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // --- SECURITY & TIMER LOGIC ---
+      const kickUser = () => {
+        localStorage.removeItem("admin_session");
+        window.location.replace("login.html");
+      };
+
+      const updateUIWithSession = (email) => {
+        const display = document.getElementById("adminDisplayEmail");
+        if (display) display.innerText = email.split("@")[0];
+        document.body.style.opacity = "1";
+      };
+
+      const checkSecurity = async () => {
+        const sessionStr = localStorage.getItem("admin_session");
+        if (!sessionStr) return kickUser();
+
+        const session = JSON.parse(sessionStr);
+        const now = Math.floor(Date.now() / 1000);
+        const timeLeft = session.expires_at - now;
+
+        // 1. Live Sync Timer Visual
+        const timerEl = document.getElementById("universalTimer");
+        if (timerEl) {
+          const m = Math.floor(Math.max(0, timeLeft) / 60);
+          const s = Math.max(0, timeLeft) % 60;
+          timerEl.innerText = `${m}:${s < 10 ? "0" : ""}${s}`;
+
+          if (timeLeft < 60) {
+            timerEl.classList.add("text-red-500", "animate-pulse");
+          }
+        }
+
+        // 2. Cek Timeout 10 Menit
+        if (timeLeft <= 0) return kickUser();
+
+        // 3. Cek Remote DB Tiap 10 Detik (Modulo 10)
+        // Cek tabel 'admin_access' sesuai login.html
+        if (now % 10 === 0) {
+          const { data, error } = await _supabase
+            .from("admin_access")
+            .select("email")
+            .eq("email", session.user.email)
+            .single();
+
+          if (error || !data) {
+            console.error("User revoked from server");
+            return kickUser();
+          }
+        }
+
+        // Tampilkan Page jika aman
+        if (document.body.style.opacity !== "1") {
+          updateUIWithSession(session.user.email);
+        }
+      };
+
+      // Jalankan Heartbeat tiap 1 detik
+      checkSecurity();
+      setInterval(checkSecurity, 1000);
+
+      // Logout function
+      window.logoutAdmin = () => {
+        if (confirm("Logout dari Master Control?")) kickUser();
+      };
+    </script>
+  </body>
+</html>

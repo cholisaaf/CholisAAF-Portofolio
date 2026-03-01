@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADMIN PANEL - POSTS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      body {
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+        background: #000;
+        color: #fff;
+        min-height: 100vh;
+      }
+      .card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      input,
+      textarea {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+      }
+      .modal-scroll::-webkit-scrollbar {
+        width: 5px;
+      }
+      .modal-scroll::-webkit-scrollbar-thumb {
+        background: #4f46e5;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+
+  <body class="p-6 md:p-12">
+    <div class="fixed top-6 right-6 z-[9999]">
+      <div
+        class="bg-black/80 backdrop-blur-md border border-white/10 px-5 py-2.5 rounded-full flex items-center gap-3 shadow-2xl"
+      >
+        <div class="w-2 h-2 bg-pink-500 rounded-full animate-pulse"></div>
+        <span
+          class="text-[10px] text-zinc-500 font-black uppercase tracking-widest"
+          >Session:</span
+        >
+        <span
+          id="universalTimer"
+          class="font-mono text-indigo-400 font-bold text-sm"
+          >10:00</span
+        >
+      </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto space-y-10">
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+      >
+        <div>
+          <h1
+            class="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-pink-500 to-violet-500 bg-clip-text text-transparent uppercase"
+          >
+            Post Controller
+          </h1>
+          <p
+            class="text-zinc-500 text-[10px] font-bold tracking-[0.3em] uppercase"
+          >
+            Manage feeds and moderate comments
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <a
+            href="index.html"
+            class="bg-indigo-600/10 hover:bg-indigo-600/20 px-5 py-2 rounded-full border border-indigo-500/30 text-indigo-400 text-xs transition font-bold uppercase tracking-widest"
+            >← Dashboard</a
+          >
+          <button
+            onclick="window.logoutAdmin()"
+            class="bg-red-500/10 hover:bg-red-500/20 px-5 py-2 rounded-full border border-red-500/30 text-red-500 text-xs transition font-bold uppercase"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <div class="card p-8 rounded-[2rem] shadow-2xl">
+        <h1
+          id="formTitle"
+          class="text-2xl font-black text-indigo-500 mb-6 uppercase italic"
+        >
+          New Post
+        </h1>
+        <input type="hidden" id="editId" />
+        <div class="space-y-4">
+          <input
+            type="text"
+            id="postTitle"
+            placeholder="Judul Postingan"
+            class="w-full p-4 rounded-xl outline-none focus:border-indigo-500 transition-all text-sm"
+          />
+
+          <div
+            class="relative border-2 border-dashed border-white/10 rounded-xl p-6 text-center hover:border-indigo-500 cursor-pointer transition-all"
+          >
+            <input
+              type="file"
+              id="postImageFile"
+              accept="image/*"
+              class="absolute inset-0 opacity-0 cursor-pointer"
+              onchange="
+                document.getElementById('fileName').innerText =
+                  '✅ ' + this.files[0].name
+              "
+            />
+            <p id="fileName" class="text-zinc-500 text-sm italic">
+              📸 Pilih Foto Baru (Kosongkan jika tidak ganti)
+            </p>
+          </div>
+
+          <textarea
+            id="postDesc"
+            rows="3"
+            placeholder="Apa yang sedang kamu pikirkan?..."
+            class="w-full p-4 rounded-xl outline-none focus:border-indigo-500 transition-all text-sm"
+          ></textarea>
+
+          <div class="flex gap-2">
+            <button
+              onclick="window.publish()"
+              id="btnSave"
+              class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold uppercase transition-all shadow-lg shadow-indigo-500/20 text-sm"
+            >
+              Publish Now
+            </button>
+            <button
+              id="btnCancel"
+              onclick="window.resetForm()"
+              class="hidden bg-zinc-700 hover:bg-zinc-600 px-6 rounded-xl font-bold uppercase transition-all text-sm"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-8 rounded-[2rem] overflow-hidden">
+        <h2
+          class="text-xl font-bold mb-6 text-zinc-400 uppercase italic tracking-tighter"
+        >
+          Manage Posts & Comments
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr
+                class="border-b border-white/10 text-zinc-500 uppercase text-[10px] tracking-widest font-black"
+              >
+                <th class="p-4">Image</th>
+                <th class="p-4">Content Info</th>
+                <th class="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="postTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="commentModal"
+      class="fixed inset-0 bg-black/90 backdrop-blur-md hidden items-center justify-center p-4 z-50"
+    >
+      <div
+        class="bg-zinc-900 border border-white/10 w-full max-w-2xl rounded-[2.5rem] overflow-hidden flex flex-col max-h-[85vh] shadow-2xl"
+      >
+        <div
+          class="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.02]"
+        >
+          <div>
+            <h3
+              class="font-black text-indigo-400 uppercase italic tracking-tighter"
+            >
+              Manage Comments
+            </h3>
+            <p
+              id="targetPostTitle"
+              class="text-[10px] text-zinc-500 truncate w-64 uppercase font-bold tracking-widest mt-1"
+            ></p>
+          </div>
+          <button
+            onclick="window.closeCommentModal()"
+            class="text-zinc-500 hover:text-white text-3xl font-light"
+          >
+            &times;
+          </button>
+        </div>
+        <div
+          id="commentContainer"
+          class="p-8 overflow-y-auto modal-scroll space-y-4 flex-grow bg-black/20"
+        ></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+      const SUPABASE_URL = "https://vnzcwijqlkdsjokvmpgv.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuemN3aWpxbGtkc2pva3ZtcGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTE0MzEsImV4cCI6MjA4NzgyNzQzMX0.LS7XzMXOknHl6zhobn5oyMiG5bHqu2zucSKF0n_NGEE";
+      const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // --- SECURITY & UNIVERSAL TIMER ---
+      const kickUser = () => {
+        localStorage.removeItem("admin_session");
+        window.location.replace("login.html");
+      };
+
+      const checkSecurity = async () => {
+        const sessionStr = localStorage.getItem("admin_session");
+        if (!sessionStr) return kickUser();
+
+        const session = JSON.parse(sessionStr);
+        const now = Math.floor(Date.now() / 1000);
+        const timeLeft = session.expires_at - now;
+
+        // Update Timer Display
+        const timerEl = document.getElementById("universalTimer");
+        if (timerEl) {
+          const m = Math.floor(Math.max(0, timeLeft) / 60);
+          const s = Math.max(0, timeLeft) % 60;
+          timerEl.innerText = `${m}:${s < 10 ? "0" : ""}${s}`;
+          if (timeLeft < 60)
+            timerEl.classList.add("text-red-500", "animate-pulse");
+        }
+
+        if (timeLeft <= 0) return kickUser();
+
+        // Remote DB Check (Setiap 10 Detik)
+        if (now % 10 === 0) {
+          const { data, error } = await _supabase
+            .from("admin_access")
+            .select("email")
+            .eq("email", session.user.email)
+            .single();
+          if (error || !data) return kickUser();
+        }
+
+        if (document.body.style.opacity !== "1") {
+          document.body.style.opacity = "1";
+          window.fetchPosts();
+        }
+      };
+
+      // --- POSTS LOGIC ---
+      window.fetchPosts = async () => {
+        const { data, error } = await _supabase
+          .from("posts")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) return;
+
+        const tbody = document.getElementById("postTableBody");
+        tbody.innerHTML = data
+          .map(
+            (p) => `
+          <tr class="border-b border-white/5 hover:bg-white/[0.02]">
+            <td class="p-4"><img src="${p.image_url || "https://via.placeholder.com/50"}" class="w-12 h-12 object-cover rounded-lg border border-white/10"></td>
+            <td class="p-4">
+              <div class="font-bold text-white">${p.title}</div>
+              <div class="text-zinc-500 text-[10px] mb-2">${new Date(p.created_at).toLocaleDateString()}</div>
+              <button onclick="window.openCommentModal('${p.id}', '${encodeURIComponent(p.title)}')" class="text-[9px] bg-indigo-500/10 px-2 py-1 rounded text-indigo-400 hover:bg-indigo-500 hover:text-white transition-all font-black uppercase border border-indigo-500/20">💬 Kelola Komentar</button>
+            </td>
+            <td class="p-4 text-right">
+              <button onclick="window.editMode('${p.id}', '${encodeURIComponent(p.title)}', '${encodeURIComponent(p.description)}')" class="text-xs text-indigo-400 hover:underline mr-3 font-bold uppercase">Edit</button>
+              <button onclick="window.deletePost('${p.id}')" class="text-xs text-red-500 hover:underline font-bold uppercase">Hapus</button>
+            </td>
+          </tr>
+        `,
+          )
+          .join("");
+      };
+
+      window.publish = async () => {
+        const id = document.getElementById("editId").value;
+        const title = document.getElementById("postTitle").value;
+        const desc = document.getElementById("postDesc").value;
+        const file = document.getElementById("postImageFile").files[0];
+        const btn = document.getElementById("btnSave");
+
+        if (!title || !desc) return alert("Isi Judul & Deskripsi!");
+        btn.innerText = "Processing...";
+        btn.disabled = true;
+
+        try {
+          let imgUrl = "";
+          if (file) {
+            const name = Date.now() + "_" + file.name;
+            const { error: uploadError } = await _supabase.storage
+              .from("post-images")
+              .upload(name, file);
+            if (uploadError) throw uploadError;
+            imgUrl = _supabase.storage.from("post-images").getPublicUrl(name)
+              .data.publicUrl;
+          }
+
+          if (id) {
+            const updateData = { title, description: desc };
+            if (imgUrl) updateData.image_url = imgUrl;
+            await _supabase.from("posts").update(updateData).eq("id", id);
+          } else {
+            await _supabase
+              .from("posts")
+              .insert([
+                { title, description: desc, image_url: imgUrl, likes: 0 },
+              ]);
+          }
+          window.resetForm();
+          window.fetchPosts();
+        } catch (e) {
+          alert(e.message);
+        } finally {
+          btn.innerText = "Publish Now";
+          btn.disabled = false;
+        }
+      };
+
+      window.deletePost = async (id) => {
+        if (confirm("Hapus postingan ini?")) {
+          await _supabase.from("posts").delete().eq("id", id);
+          window.fetchPosts();
+        }
+      };
+
+      window.openCommentModal = async (postId, title) => {
+        const modal = document.getElementById("commentModal");
+        const container = document.getElementById("commentContainer");
+        document.getElementById("targetPostTitle").innerText =
+          "Post: " + decodeURIComponent(title);
+        modal.classList.replace("hidden", "flex");
+        container.innerHTML = `<p class="text-center text-zinc-600 animate-pulse">Loading comments...</p>`;
+
+        const { data } = await _supabase
+          .from("comments")
+          .select("*")
+          .eq("post_id", postId)
+          .order("created_at", { ascending: false });
+
+        container.innerHTML = !data?.length
+          ? `<div class="text-center py-10 text-zinc-600 italic text-sm">Tidak ada komentar.</div>`
+          : data
+              .map(
+                (c) => `
+            <div class="bg-white/5 p-4 rounded-2xl flex justify-between items-start gap-4 border border-white/5">
+              <div class="flex-grow">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-indigo-400 font-black text-[10px] uppercase tracking-tighter bg-indigo-400/10 px-2 py-0.5 rounded">${c.username}</span>
+                  <span class="text-[9px] text-zinc-600">${new Date(c.created_at).toLocaleString()}</span>
+                </div>
+                <p class="text-sm text-zinc-300">${c.comment_text}</p>
+              </div>
+              <button onclick="window.deleteComment('${c.id}', '${postId}', '${title}')" class="text-[10px] bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-lg font-bold uppercase">Hapus</button>
+            </div>
+          `,
+              )
+              .join("");
+      };
+
+      window.deleteComment = async (commentId, postId, title) => {
+        if (confirm("Hapus komentar?")) {
+          await _supabase.from("comments").delete().eq("id", commentId);
+          window.openCommentModal(postId, title);
+        }
+      };
+
+      window.closeCommentModal = () =>
+        document
+          .getElementById("commentModal")
+          .classList.replace("flex", "hidden");
+
+      window.editMode = (id, title, desc) => {
+        document.getElementById("editId").value = id;
+        document.getElementById("postTitle").value = decodeURIComponent(title);
+        document.getElementById("postDesc").value = decodeURIComponent(desc);
+        document.getElementById("formTitle").innerText = "Edit Postingan";
+        document.getElementById("btnSave").innerText = "Update Post";
+        document.getElementById("btnCancel").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+
+      window.resetForm = () => {
+        document.getElementById("editId").value = "";
+        document.getElementById("postTitle").value = "";
+        document.getElementById("postDesc").value = "";
+        document.getElementById("postImageFile").value = "";
+        document.getElementById("fileName").innerText =
+          "📸 Pilih Foto Baru (Kosongkan jika tidak ganti)";
+        document.getElementById("formTitle").innerText = "New Post";
+        document.getElementById("btnSave").innerText = "Publish Now";
+        document.getElementById("btnCancel").classList.add("hidden");
+      };
+
+      window.logoutAdmin = () => kickUser();
+
+      // Start Security Engine
+      checkSecurity();
+      setInterval(checkSecurity, 1000);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Login | CholisAAF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-[#050505] text-white flex items-center justify-center min-h-screen font-sans"
+  >
+    <div class="w-full max-w-md p-8">
+      <div
+        class="bg-zinc-900/50 border border-white/10 p-8 rounded-3xl shadow-2xl backdrop-blur-xl"
+      >
+        <div class="text-center mb-8">
+          <h1
+            class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent"
+          >
+            Admin Portal
+          </h1>
+          <p class="text-zinc-500 mt-2 text-sm">
+            Login untuk akses Control Center
+          </p>
+        </div>
+
+        <form id="loginForm" class="space-y-5">
+          <div>
+            <label
+              class="block text-xs font-medium text-zinc-400 uppercase tracking-widest mb-2 ml-1"
+              >Email Address</label
+            >
+            <input
+              type="email"
+              id="email"
+              class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-blue-500 transition-all text-white"
+              placeholder="admin@cholis.com"
+              required
+            />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-medium text-zinc-400 uppercase tracking-widest mb-2 ml-1"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="password"
+              class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 outline-none focus:border-blue-500 transition-all text-white"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            id="btnSubmit"
+            class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-2xl font-bold shadow-lg shadow-blue-600/20 transition-all active:scale-95 flex justify-center items-center"
+          >
+            <span>Masuk ke Panel</span>
+          </button>
+        </form>
+      </div>
+      <p class="text-center mt-8 text-zinc-600 text-xs">
+        &copy; 2026 CholisAAF Portofolio • Secure Database Access
+      </p>
+    </div>
+
+    <script type="module">
+      import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+      const _supabase = createClient(
+        "https://vnzcwijqlkdsjokvmpgv.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZuemN3aWpxbGtkc2pva3ZtcGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNTE0MzEsImV4cCI6MjA4NzgyNzQzMX0.LS7XzMXOknHl6zhobn5oyMiG5bHqu2zucSKF0n_NGEE",
+      );
+
+      localStorage.removeItem("admin_session");
+
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("btnSubmit");
+          btn.innerHTML = "Validating...";
+          btn.disabled = true;
+
+          const email = document.getElementById("email").value;
+          const password = document.getElementById("password").value;
+
+          const { data, error } = await _supabase
+            .from("admin_access")
+            .select("*")
+            .eq("email", email)
+            .eq("password", password)
+            .single();
+
+          if (error || !data) {
+            alert("Akses Ditolak: Data tidak ditemukan!");
+            btn.innerHTML = "Masuk ke Panel";
+            btn.disabled = false;
+          } else {
+            // SESSION UNIVERSAL 10 MENIT (600 DETIK)
+            const sessionData = {
+              user: { email: data.email },
+              expires_at: Math.floor(Date.now() / 1000) + 600,
+            };
+            localStorage.setItem("admin_session", JSON.stringify(sessionData));
+            window.location.replace("index.html");
+          }
+        });
+    </script>
+  </body>
+</html>
