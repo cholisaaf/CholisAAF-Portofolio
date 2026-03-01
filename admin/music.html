@@ -13,6 +13,10 @@
         color: #fff;
         min-height: 100vh;
       }
+      input:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
       input {
         background: rgba(255, 255, 255, 0.05) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -23,12 +27,47 @@
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
+      /* Fix untuk tabel responsive di mobile */
+      @media (max-width: 640px) {
+        table,
+        thead,
+        tbody,
+        th,
+        td,
+        tr {
+          display: block;
+        }
+        thead {
+          display: none;
+        }
+        tr {
+          margin-bottom: 1rem;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 1.5rem;
+          padding: 1rem;
+          background: rgba(255, 255, 255, 0.02);
+        }
+        td {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border: none !important;
+          padding: 0.5rem 0 !important;
+        }
+        td::before {
+          content: attr(data-label);
+          font-size: 10px;
+          text-transform: uppercase;
+          color: #71717a;
+          font-weight: 800;
+        }
+      }
     </style>
   </head>
-  <body class="p-6 md:p-12">
-    <div class="fixed top-6 right-6 z-[9999]">
+  <body class="p-4 md:p-12">
+    <div class="fixed top-4 right-4 md:top-6 md:right-6 z-[9999]">
       <div
-        class="bg-black/80 border border-white/10 px-5 py-2 rounded-full flex items-center gap-3 shadow-2xl"
+        class="bg-black/80 border border-white/10 px-4 py-2 rounded-full flex items-center gap-3 shadow-2xl"
       >
         <span class="text-[10px] text-zinc-500 font-black uppercase"
           >Session:</span
@@ -42,25 +81,25 @@
     </div>
 
     <div class="max-w-4xl mx-auto">
-      <div class="flex justify-between items-center mb-10">
+      <div class="flex justify-between items-center mb-8">
         <h1
-          class="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent uppercase"
+          class="text-2xl md:text-3xl font-black italic tracking-tighter bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent uppercase"
         >
           Music Manager
         </h1>
         <a
           href="index.html"
-          class="text-xs font-bold text-zinc-500 hover:text-white transition"
+          class="text-[10px] font-bold text-zinc-500 hover:text-white transition"
           >← KEMBALI</a
         >
       </div>
 
-      <div class="glass p-8 rounded-[2.5rem] mb-10">
+      <div class="glass p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] mb-10">
         <h2
           id="formTitle"
-          class="text-xl font-bold mb-6 text-indigo-400 italic"
+          class="text-lg font-bold mb-6 text-indigo-400 italic uppercase"
         >
-          TAMBAH LAGU BARU
+          Tambah Lagu Baru
         </h2>
         <input type="hidden" id="editId" />
 
@@ -79,6 +118,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div
+              id="fileWrapper"
               class="relative border-2 border-dashed border-white/10 rounded-2xl p-6 text-center hover:border-indigo-500 transition cursor-pointer"
             >
               <input
@@ -86,10 +126,7 @@
                 id="audioFile"
                 accept="audio/*"
                 class="absolute inset-0 opacity-0 cursor-pointer"
-                onchange="
-                  document.getElementById('fileStatus').innerText =
-                    '✅ ' + this.files[0].name
-                "
+                onchange="handleInputToggle('file')"
               />
               <p id="fileStatus" class="text-xs text-zinc-500 italic">
                 Upload File Audio (.mp3)
@@ -99,23 +136,33 @@
               <input
                 type="text"
                 id="songSrc"
-                placeholder="Atau paste link audio (Discord dll)"
+                placeholder="Atau paste link audio"
+                oninput="handleInputToggle('link')"
                 class="w-full p-6 rounded-2xl outline-none focus:border-indigo-500 transition text-sm font-mono"
               />
             </div>
           </div>
 
-          <button
-            id="btnSave"
-            onclick="handleSave()"
-            class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-lg shadow-indigo-600/20"
-          >
-            Simpan Lagu
-          </button>
+          <div class="flex gap-2">
+            <button
+              id="btnSave"
+              onclick="handleSave()"
+              class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-black uppercase tracking-widest transition shadow-lg shadow-indigo-600/20 text-sm"
+            >
+              Simpan Lagu
+            </button>
+            <button
+              id="btnReset"
+              onclick="resetForm()"
+              class="hidden bg-zinc-800 hover:bg-zinc-700 px-6 rounded-2xl font-bold transition text-xs"
+            >
+              BATAL
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="glass rounded-[2.5rem] overflow-hidden">
+      <div class="glass rounded-[2rem] md:rounded-[2.5rem] overflow-hidden">
         <table class="w-full text-left text-sm">
           <thead
             class="bg-white/5 text-[10px] uppercase font-black text-zinc-500 tracking-widest"
@@ -140,7 +187,40 @@
 
       let playlistData = [];
 
-      // --- SECURITY & UNIVERSAL TIMER (SINKRON KE SEMUA HALAMAN) ---
+      // Logic Toggle Input (Salah satu saja)
+      window.handleInputToggle = (type) => {
+        const fileInput = document.getElementById("audioFile");
+        const linkInput = document.getElementById("songSrc");
+        const fileStatus = document.getElementById("fileStatus");
+
+        if (type === "file" && fileInput.files.length > 0) {
+          linkInput.value = "";
+          linkInput.disabled = true;
+          fileStatus.innerText = "✅ " + fileInput.files[0].name;
+        } else if (type === "link" && linkInput.value.trim() !== "") {
+          fileInput.value = "";
+          fileInput.disabled = true;
+          fileStatus.innerText = "Upload dinonaktifkan";
+        } else {
+          fileInput.disabled = false;
+          linkInput.disabled = false;
+          fileStatus.innerText = "Upload File Audio (.mp3)";
+        }
+      };
+
+      window.resetForm = () => {
+        document.getElementById("editId").value = "";
+        document.getElementById("songTitle").value = "";
+        document.getElementById("songSrc").value = "";
+        document.getElementById("audioFile").value = "";
+        document.getElementById("audioFile").disabled = false;
+        document.getElementById("songSrc").disabled = false;
+        document.getElementById("fileStatus").innerText =
+          "Upload File Audio (.mp3)";
+        document.getElementById("formTitle").innerText = "TAMBAH LAGU BARU";
+        document.getElementById("btnReset").classList.add("hidden");
+      };
+
       const kickUser = () => {
         localStorage.removeItem("admin_session");
         window.location.replace("login.html");
@@ -153,11 +233,12 @@
         const now = Math.floor(Date.now() / 1000);
         const timeLeft = session.expires_at - now;
 
-        document.getElementById("universalTimer").innerText =
-          `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`;
+        const timerEl = document.getElementById("universalTimer");
+        if (timerEl)
+          timerEl.innerText = `${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`;
+
         if (timeLeft <= 0) return kickUser();
 
-        // Check Remote Tiap 10 Detik
         if (now % 10 === 0) {
           const { data } = await _supabase
             .from("admin_access")
@@ -173,7 +254,6 @@
         }
       };
 
-      // --- LOGIKA MUSIC & UPLOAD ---
       window.fetchLagu = async () => {
         const { data } = await _supabase
           .from("playlist")
@@ -193,30 +273,26 @@
         const btn = document.getElementById("btnSave");
 
         if (!title) return alert("Isi judul dulu!");
-        btn.innerText = "SEDANG UPLOAD...";
+        btn.innerText = "PROCESSING...";
         btn.disabled = true;
 
         try {
           let finalLink = manualLink;
 
-          // JIKA ADA FILE DIUPLOAD
           if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
             const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
-
-            const { data: up, error: err } = await _supabase.storage
+            const { error: err } = await _supabase.storage
               .from("music-files")
               .upload(fileName, file);
             if (err) throw err;
-
             const { data: linkData } = _supabase.storage
               .from("music-files")
               .getPublicUrl(fileName);
             finalLink = linkData.publicUrl;
           }
 
-          if (!finalLink)
-            throw new Error("Pilih file audio atau masukkan link!");
+          if (!finalLink) throw new Error("Pilih file atau masukkan link!");
 
           if (id) {
             await _supabase
@@ -231,8 +307,10 @@
               .from("playlist")
               .insert([{ title, src: finalLink, priority: nextPrio }]);
           }
-
-          location.reload();
+          resetForm();
+          fetchLagu();
+          btn.innerText = "Simpan Lagu";
+          btn.disabled = false;
         } catch (e) {
           alert(e.message);
           btn.innerText = "Simpan Lagu";
@@ -244,20 +322,20 @@
         document.getElementById("listLagu").innerHTML = playlistData
           .map(
             (s, i) => `
-          <tr class="border-t border-white/5 hover:bg-white/[0.02]">
-            <td class="p-5 text-center">
-              <div class="flex flex-col items-center gap-1 text-zinc-600">
-                <button onclick="move(${i}, 'up')" class="hover:text-indigo-400">▲</button>
-                <span class="font-mono text-[10px]">${s.priority}</span>
-                <button onclick="move(${i}, 'down')" class="hover:text-indigo-400">▼</button>
+          <tr class="border-t border-white/5">
+            <td data-label="Urutan" class="p-5 text-center">
+              <div class="flex md:flex-col items-center justify-center gap-3 md:gap-1 text-zinc-600">
+                <button onclick="move(${i}, 'up')" class="hover:text-indigo-400 p-2">▲</button>
+                <span class="font-mono text-[10px] bg-white/5 px-2 py-1 rounded">${s.priority}</span>
+                <button onclick="move(${i}, 'down')" class="hover:text-indigo-400 p-2">▼</button>
               </div>
             </td>
-            <td class="p-5">
-              <div class="font-bold">${s.title}</div>
-              <div class="text-[9px] text-zinc-500 font-mono truncate max-w-xs">${s.src}</div>
+            <td data-label="Lagu" class="p-5">
+              <div class="font-bold text-white mb-1">${s.title}</div>
+              <div class="text-[9px] text-zinc-500 font-mono truncate max-w-[180px] md:max-w-xs">${s.src}</div>
             </td>
-            <td class="p-5 text-right">
-              <button onclick="editMode(${i})" class="text-indigo-400 font-bold mr-3 text-xs">EDIT</button>
+            <td data-label="Aksi" class="p-5 text-right space-x-4">
+              <button onclick="editMode(${i})" class="text-indigo-400 font-bold text-xs">EDIT</button>
               <button onclick="del(${s.id})" class="text-red-500 font-bold text-xs">HAPUS</button>
             </td>
           </tr>
@@ -295,7 +373,8 @@
         document.getElementById("songTitle").value = s.title;
         document.getElementById("songSrc").value = s.src;
         document.getElementById("formTitle").innerText = "EDIT LAGU";
-        window.scrollTo(0, 0);
+        document.getElementById("btnReset").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       };
 
       setInterval(runSecurity, 1000);
