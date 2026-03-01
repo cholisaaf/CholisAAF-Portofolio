@@ -27,7 +27,7 @@
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
-      /* Fix untuk tabel responsive di mobile */
+      /* Responsive Table to Cards on Mobile */
       @media (max-width: 640px) {
         table,
         thead,
@@ -88,9 +88,9 @@
           Music Manager
         </h1>
         <a
-          href="index.html"
-          class="text-[10px] font-bold text-zinc-500 hover:text-white transition"
-          >← KEMBALI</a
+          href="../index.html"
+          class="text-[10px] font-bold text-zinc-500 hover:text-white transition uppercase"
+          >← Ke Portofolio</a
         >
       </div>
 
@@ -187,7 +187,7 @@
 
       let playlistData = [];
 
-      // Logic Toggle Input (Salah satu saja)
+      // Proteksi Input: Pilih salah satu (File atau Link)
       window.handleInputToggle = (type) => {
         const fileInput = document.getElementById("audioFile");
         const linkInput = document.getElementById("songSrc");
@@ -219,6 +219,7 @@
           "Upload File Audio (.mp3)";
         document.getElementById("formTitle").innerText = "TAMBAH LAGU BARU";
         document.getElementById("btnReset").classList.add("hidden");
+        document.getElementById("btnSave").innerText = "Simpan Lagu";
       };
 
       const kickUser = () => {
@@ -239,6 +240,7 @@
 
         if (timeLeft <= 0) return kickUser();
 
+        // Cek remote tiap 10 detik
         if (now % 10 === 0) {
           const { data } = await _supabase
             .from("admin_access")
@@ -279,6 +281,7 @@
         try {
           let finalLink = manualLink;
 
+          // Proses Upload jika ada file
           if (fileInput.files.length > 0) {
             const file = fileInput.files[0];
             const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, "_")}`;
@@ -307,14 +310,44 @@
               .from("playlist")
               .insert([{ title, src: finalLink, priority: nextPrio }]);
           }
+
           resetForm();
           fetchLagu();
-          btn.innerText = "Simpan Lagu";
           btn.disabled = false;
         } catch (e) {
           alert(e.message);
           btn.innerText = "Simpan Lagu";
           btn.disabled = false;
+        }
+      };
+
+      // LOGIKA RE-INDEX (Merapikan Urutan Setelah Hapus)
+      window.del = async (id) => {
+        if (confirm("Hapus lagu? Urutan akan otomatis dirapikan.")) {
+          // 1. Hapus Lagu
+          const { error } = await _supabase
+            .from("playlist")
+            .delete()
+            .eq("id", id);
+          if (error) return alert("Gagal hapus!");
+
+          // 2. Ambil data sisa & Rapikan Priority
+          const { data: remaining } = await _supabase
+            .from("playlist")
+            .select("id")
+            .order("priority", { ascending: true });
+
+          if (remaining && remaining.length > 0) {
+            const updates = remaining.map((song, idx) =>
+              _supabase
+                .from("playlist")
+                .update({ priority: idx + 1 })
+                .eq("id", song.id),
+            );
+            await Promise.all(updates);
+          }
+
+          fetchLagu();
         }
       };
 
@@ -326,13 +359,13 @@
             <td data-label="Urutan" class="p-5 text-center">
               <div class="flex md:flex-col items-center justify-center gap-3 md:gap-1 text-zinc-600">
                 <button onclick="move(${i}, 'up')" class="hover:text-indigo-400 p-2">▲</button>
-                <span class="font-mono text-[10px] bg-white/5 px-2 py-1 rounded">${s.priority}</span>
+                <span class="font-mono text-[10px] bg-white/5 px-2 py-1 rounded text-indigo-300 font-bold">${s.priority}</span>
                 <button onclick="move(${i}, 'down')" class="hover:text-indigo-400 p-2">▼</button>
               </div>
             </td>
             <td data-label="Lagu" class="p-5">
               <div class="font-bold text-white mb-1">${s.title}</div>
-              <div class="text-[9px] text-zinc-500 font-mono truncate max-w-[180px] md:max-w-xs">${s.src}</div>
+              <div class="text-[9px] text-zinc-500 font-mono truncate max-w-[150px] md:max-w-xs">${s.src}</div>
             </td>
             <td data-label="Aksi" class="p-5 text-right space-x-4">
               <button onclick="editMode(${i})" class="text-indigo-400 font-bold text-xs">EDIT</button>
@@ -358,13 +391,6 @@
           .update({ priority: cur.priority })
           .eq("id", tar.id);
         fetchLagu();
-      };
-
-      window.del = async (id) => {
-        if (confirm("Hapus lagu?")) {
-          await _supabase.from("playlist").delete().eq("id", id);
-          fetchLagu();
-        }
       };
 
       window.editMode = (i) => {
