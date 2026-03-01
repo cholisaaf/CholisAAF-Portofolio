@@ -1578,19 +1578,15 @@ rounded-full font-medium">
         }
 
         function showNewPostNotification(postTitle) {
-            const container = document.getElementById('notification-container');
-            if (!container) return;
+    const container = document.getElementById('notification-container');
+    if (!container) return;
 
-      
-            const postModal = document.getElementById('postModal');
-            const isModalOpen = postModal && !postModal.classList.contains('hidden') && postModal.style.display !== 'none';
+    const id = Date.now();
+    const toast = document.createElement('div');
+    toast.id = `toast-${id}`;
 
-            const id = Date.now();
-            const toast = document.createElement('div');
-            toast.id = `toast-${id}`;
-
-            toast.className = `toast-notif flex items-center gap-4 p-4 rounded-2xl border border-white/10 shadow-2xl mb-3`;
-            toast.style.cssText = `
+    toast.className = `toast-notif flex items-center gap-4 p-4 rounded-2xl border border-white/10 shadow-2xl mb-3`;
+    toast.style.cssText = `
         background: rgba(20, 20, 22, 0.95);
         backdrop-filter: blur(10px);
         pointer-events: auto;
@@ -1600,38 +1596,33 @@ rounded-full font-medium">
         overflow: hidden;
     `;
 
-            toast.innerHTML = `
+    toast.innerHTML = `
         <div class="flex-shrink-0 w-10 h-10 rounded-xl overflow-hidden bg-zinc-800 border border-white/5 flex items-center justify-center">
             <img src="img/pfp.svg" alt="Logo" class="w-full h-full object-cover">
         </div>
-
         <div class="flex-grow">
             <p class="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400">New Post Update</p>
             <p class="text-xs font-medium text-zinc-100 line-clamp-1">${postTitle}</p>
         </div>
-
         <button type="button" onclick="closeToast(${id})" class="p-1.5 hover:bg-white/10 rounded-full transition-all cursor-pointer group">
             <svg class="w-4 h-4 text-zinc-500 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </button>
-
-<div class="absolute bottom-0 left-0 h-[3px] bg-indigo-500 rounded-full mx-1 mb-[1px]" 
-     style="width: calc(100% - 8px); animation: shrink 5s linear forwards">
-</div>
+        <div class="absolute bottom-0 left-0 h-[3px] bg-indigo-500 rounded-full mx-1 mb-[1px]" 
+             style="width: calc(100% - 8px); animation: shrink 5s linear forwards">
+        </div>
     `;
 
-            container.appendChild(toast);
+    container.appendChild(toast);
 
-            if (isModalOpen) {
-                const audio = new Audio('sound/2358-preview.mp3');
-                audio.volume = 0.4;
-                audio.play().catch(e => console.log("Audio blocked"));
-            }
+    const audio = new Audio('sound/2358-preview.mp3');
+    audio.volume = 0.4;
 
-      
-            setTimeout(() => closeToast(id), 5000);
-        }
+    audio.play().catch(e => console.log("Audio blocked by browser auto-play policy"));
+
+    setTimeout(() => closeToast(id), 5000);
+}
     </script>
     <div id="notification-container" class="fixed top-10 right-5 z-[9999] pointer-events-none"></div>
     </div>
